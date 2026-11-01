@@ -1,45 +1,45 @@
-# MORPH — Türkçe AI Sohbet
+# MORPH — Turkish AI Chat
 
-MORPH, OpenRouter üzerinden `nvidia/nemotron-3-ultra-550b-a55b:free` modelini kullanan Türkçe sohbet sitesidir.
+MORPH is a Turkish chat website powered by OpenRouter's `nvidia/nemotron-3-ultra-550b-a55b:free` model.
 
-**Canlı site:** [MORPH’u aç](https://morph-ai-pal4.onrender.com)
+**Live website:** [Open MORPH](https://morph-ai-pal4.onrender.com)
 
-## Bilgisayarında çalıştırma
+## Run locally
 
-1. [Node.js 20 veya üzerini](https://nodejs.org/) yükle.
-2. OpenRouter hesabından bir API anahtarı oluştur.
-3. MORPH klasöründe PowerShell açıp örnek ortam dosyasını kopyala:
+1. Install [Node.js 20 or later](https://nodejs.org/).
+2. Create an API key in your OpenRouter account.
+3. Open PowerShell in the MORPH folder and copy the example environment file:
 
    ```powershell
    Copy-Item .env.example .env
    ```
 
-4. `.env` dosyasını Not Defteri ile aç ve kendi anahtarını ekle:
+4. Open `.env` in Notepad and add your own API key:
 
    ```env
-   OPENROUTER_API_KEY=buraya_kendi_api_anahtarini_yaz
+   OPENROUTER_API_KEY=paste_your_own_api_key_here
    ```
 
-5. Gerekli paketleri kur ve sunucuyu başlat:
+5. Install the required packages and start the server:
 
    ```powershell
    npm ci
    npm start
    ```
 
-6. Tarayıcıda <http://localhost:8000> adresini aç.
+6. Open <http://localhost:8000> in your browser.
 
-`.env` dosyası Git tarafından yok sayılır. API anahtarını `chat.html` dosyasına veya başka bir kaynak dosyasına yazma ve GitHub’a yükleme.
+Git ignores the `.env` file. Never put your API key in `chat.html` or any other source file, and never upload it to GitHub.
 
-## API anahtarının çalışma şekli
+## How the API key works
 
-Tarayıcı mesajları MORPH sunucusuna gönderir; sunucu da OpenRouter’a iletir. API anahtarı sunucuda tutulur ve tarayıcıya gönderilmez. Canlı sitede anahtar Render’daki `OPENROUTER_API_KEY` gizli ortam değişkeninde saklanır. Siteyi kullananların istekleri bu anahtar üzerinden yapılır.
+The browser sends messages to the MORPH server, and the server forwards them to OpenRouter. The API key stays on the server and is never sent to the browser. For the live website, the key is stored as the secret `OPENROUTER_API_KEY` environment variable on Render. Site visitors' requests use this key.
 
-## Proje dosyaları
+## Project files
 
-- `chat.html` — sohbet arayüzü ve tarayıcıda tutulan sohbet geçmişi.
-- `server.js` — web sunucusu ve sunucu tarafındaki OpenRouter bağlantısı.
-- `render.yaml` — Render dağıtım ayarları.
-- `package.json` ve `package-lock.json` — Node.js başlatma ve kurulum ayarları.
-- `.env.example` — yerel API anahtarı ayarı için boş örnek dosya.
+- `chat.html` — chat interface and browser-stored conversation history.
+- `server.js` — web server and server-side OpenRouter connection.
+- `render.yaml` — Render deployment settings.
+- `package.json` and `package-lock.json` — Node.js startup and install configuration.
+- `.env.example` — blank example for the local API key setting.
 
