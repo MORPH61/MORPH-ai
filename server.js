@@ -1,4 +1,3 @@
-// Local web app and private OpenRouter proxy. The API key stays on this server.
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
