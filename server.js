@@ -3,7 +3,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = __dirname;
-const model = 'nvidia/nemotron-3-ultra-550b-a55b:free';
+const defaultModel = 'nvidia/nemotron-3-ultra-550b-a55b:free';
+const models = new Set([defaultModel, 'meta-llama/llama-3.2-11b-vision-instruct:free']);
 const requestWindows = new Map();
 function loadEnv() {
   try {
@@ -35,7 +36,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === 'GET' && url.pathname === '/api/health') {
     loadEnv();
-    reply(res, 200, { ok: true, configured: !!process.env.OPENROUTER_API_KEY, model });
+    reply(res, 200, { ok: true, configured: !!process.env.OPENROUTER_API_KEY, models: [...models], defaultModel });
     return;
   }
   if (req.method !== 'POST' || url.pathname !== '/api/chat') {
@@ -60,13 +61,24 @@ const server = http.createServer(async (req, res) => {
     let raw = '';
     for await (const chunk of req) {
       raw += chunk;
-      if (raw.length > 4 * 1024 * 1024) return reply(res, 413, { error: 'İstek 4 MB sınırını aşıyor.' });
+      if (raw.length > 8 * 1024 * 1024) return reply(res, 413, { error: 'İstek 8 MB sınırını aşıyor.' });
     }
     const input = JSON.parse(raw);
+    const selectedModel = models.has(input.model) ? input.model : defaultModel;
+    if (input.model && !models.has(input.model)) return reply(res, 400, { error: 'Seçilen model desteklenmiyor.' });
     if (!Array.isArray(input.messages) || !input.messages.length) return reply(res, 400, { error: 'Gönderilecek sohbet mesajı bulunamadı.' });
-    if (input.messages.length > 80 || input.messages.some(message => !['user', 'assistant'].includes(message.role) || typeof message.content !== 'string' || message.content.length > 100_000)) {
+    if (input.messages.length > 80 || input.messages.some(message => {
+      if (!['user', 'assistant'].includes(message.role) || typeof message.content !== 'string' || message.content.length > 100_000) return true;
+      const images = message.images ?? [];
+      if (!Array.isArray(images) || images.length > 3 || images.some(image => typeof image !== 'string' || image.length > 1_600_000 || !/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/.test(image))) return true;
+      return images.length > 0 && (message.role !== 'user' || selectedModel !== 'meta-llama/llama-3.2-11b-vision-instruct:free');
+    })) {
       return reply(res, 400, { error: 'Sohbet mesajları geçersiz veya çok uzun.' });
     }
+    const apiMessages = input.messages.map(message => {
+      if (!message.images?.length) return { role: message.role, content: message.content };
+      return { role: message.role, content: [{ type: 'text', text: message.content || 'Bu görseli incele.' }, ...message.images.map(url => ({ type: 'image_url', image_url: { url } }))] };
+    });
     const upstream = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -75,14 +87,14 @@ const server = http.createServer(async (req, res) => {
         'HTTP-Referer': process.env.RENDER_EXTERNAL_URL || `http://localhost:${port}`,
         'X-Title': 'MORPH',
       },
-      body: JSON.stringify({ model, messages: input.messages, stream: false }),
+      body: JSON.stringify({ model: selectedModel, messages: apiMessages, stream: false }),
       signal: AbortSignal.timeout(180000),
     });
     const data = await upstream.json().catch(() => ({}));
     if (!upstream.ok) return reply(res, upstream.status, { error: data.error?.message || `OpenRouter HTTP ${upstream.status}` });
     let content = data.choices?.[0]?.message?.content || '';
     if (Array.isArray(content)) content = content.filter(x => x.type === 'text').map(x => x.text).join('\n');
-    reply(res, 200, { message: { content }, model: data.model || model });
+    reply(res, 200, { message: { content }, model: data.model || selectedModel });
   } catch (error) {
     reply(res, 502, { error: error.name === 'TimeoutError' ? 'OpenRouter yanıtı zaman aşımına uğradı.' : `OpenRouter isteği başarısız: ${error.message}` });
   }
