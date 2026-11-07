@@ -23,9 +23,11 @@ function reply(res, status, value) {
 
 function logVisitor(req, event) {
   const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown').split(',')[0].trim();
+  const userAgent = req.headers['user-agent'] || null;
+  if (event === 'page_view' && /Go-http-client/i.test(userAgent || '')) return ip;
   let referrer = null;
   try { if (req.headers.referer) referrer = new URL(req.headers.referer).origin; } catch {}
-  console.log(JSON.stringify({ event, time: new Date().toISOString(), ip, referrer, userAgent: req.headers['user-agent'] || null }));
+  console.log(JSON.stringify({ event, time: new Date().toISOString(), ip, referrer, userAgent }));
   return ip;
 }
 
