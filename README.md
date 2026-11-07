@@ -1,8 +1,19 @@
 # MORPH — Turkish AI Chat
 
-MORPH is a Turkish chat website powered by OpenRouter's `nvidia/nemotron-3-ultra-550b-a55b:free` model.
+MORPH is a Turkish chat website powered by OpenRouter. NVIDIA Nemotron 3 Ultra writes chat replies, while NVIDIA Nemotron 3.5 Super VL analyzes uploaded images.
 
 **Live website:** [Open MORPH](https://morph-ai-pal4.onrender.com)
+
+## Features
+
+- **Two-model workflow:** Nemotron 3.5 Super VL analyzes images; Nemotron 3 Ultra uses that analysis to write the final response.
+- **Image uploads:** Attach up to three PNG, JPEG, or WebP images to a message.
+- **Clipboard paste:** Paste an image directly into the chat with Ctrl+V.
+- **Conversation history:** Recent chats are saved in the browser on the current device.
+- **Collapsible sidebar:** Hide or show the chat list.
+- **Responsive dark interface:** Use MORPH on desktop or mobile.
+
+The image-analysis model uses OpenRouter's free endpoint, which may have rate limits or temporary availability issues. Avoid uploading confidential or personal images, including photos of faces, to its free NVIDIA endpoint.
 
 ## Run locally
 
@@ -42,4 +53,3 @@ The browser sends messages to the MORPH server, and the server forwards them to 
 - `render.yaml` — Render deployment settings.
 - `package.json` and `package-lock.json` — Node.js startup and install configuration.
 - `.env.example` — blank example for the local API key setting.
-
