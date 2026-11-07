@@ -21,6 +21,14 @@ function reply(res, status, value) {
   res.end(JSON.stringify(value));
 }
 
+function logVisitor(req, event) {
+  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown').split(',')[0].trim();
+  let referrer = null;
+  try { if (req.headers.referer) referrer = new URL(req.headers.referer).origin; } catch {}
+  console.log(JSON.stringify({ event, time: new Date().toISOString(), ip, referrer, userAgent: req.headers['user-agent'] || null }));
+  return ip;
+}
+
 async function complete(model, messages, key, port) {
   const upstream = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -48,6 +56,7 @@ async function complete(model, messages, key, port) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1:8000');
   if (req.method === 'GET' && ['/', '/chat.html'].includes(url.pathname)) {
+    logVisitor(req, 'page_view');
     res.writeHead(200, {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'no-store',
@@ -72,7 +81,7 @@ const server = http.createServer(async (req, res) => {
   loadEnv();
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) return reply(res, 503, { error: 'OpenRouter anahtarı sunucuda ayarlı değil. Render Environment bölümüne OPENROUTER_API_KEY ekle.' });
-  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown').split(',')[0].trim();
+  const ip = logVisitor(req, 'chat_request');
   const now = Date.now();
   const recent = (requestWindows.get(ip) || []).filter(time => now - time < 60_000);
   if (recent.length >= 20) return reply(res, 429, { error: 'Çok sık istek gönderildi. Bir dakika sonra tekrar dene.' });
