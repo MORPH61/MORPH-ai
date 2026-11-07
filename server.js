@@ -4,7 +4,7 @@ const path = require('node:path');
 
 const root = __dirname;
 const textModel = 'nvidia/nemotron-3-ultra-550b-a55b:free';
-const visionModel = 'google/gemma-4-26b-a4b-it:free';
+const visionModel = 'nvidia/nemotron-3.5-super-vl:free';
 const requestWindows = new Map();
 
 function loadEnv() {
@@ -114,7 +114,7 @@ const server = http.createServer(async (req, res) => {
       const finalMessages = input.messages.map((message, index) => ({
         role: message.role,
         content: index === imageIndex
-          ? `${message.content}${message.content ? '\n\n' : ''}[Gemma görsel analizi]\n${analysis}`
+          ? `${message.content}${message.content ? '\n\n' : ''}[Görsel analizi]\n${analysis}`
           : message.content,
       }));
       content = await complete(textModel, finalMessages, key, port);
